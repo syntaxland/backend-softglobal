@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  gcloud:
+    image: google/cloud-sdk:alpine
+    container_name: gcloud-cli
+    working_dir: /app
+    tty: true
+    stdin_open: true
+    volumes:
+      - .:/app
+      - ~/.config/gcloud:/root/.config/gcloud:rw
+    environment:
+      - CLOUDSDK_CORE_PROJECT=backend-softglobal
+      - CLOUDSDK_COMPUTE_REGION=us-east1
+      - CLOUDSDK_COMPUTE_ZONE=us-east1-a
+    entrypoint: ["ash"]  

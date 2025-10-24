@@ -1,0 +1,23 @@
+runtime: python311
+entrypoint: gunicorn -b :$PORT core.wsgi:application
+
+env_variables:
+  DJANGO_SETTINGS_MODULE: "core.settings"
+  DEBUG: "False"
+  DB_NAME: "softglobaldb"
+  DB_USER: "postgres"
+  DB_PASSWORD: "boz1234567"  
+  DB_HOST: "/cloudsql/backend-softglobal:us-east1:softglobaldb"
+  DB_PORT: "5432"
+  SECRET_KEY: "your-strong-secret-key"
+  ALLOWED_HOSTS: "backend-softglobal.ue.r.appspot.com"
+
+beta_settings:
+  cloud_sql_instances: backend-softglobal:us-east1:softglobaldb
+
+handlers:
+  - url: /static
+    static_dir: staticfiles/
+
+  - url: /.*
+    script: auto
