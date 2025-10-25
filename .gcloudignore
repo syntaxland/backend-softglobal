@@ -1,9 +1,31 @@
-.git
-.gitignore
+# Ignore Python virtual environments
+venv/
+env/
 __pycache__/
-/setup.cfg
-docker-compose.yml
-docker-compose-deploy.yaml
+
+# Ignore version control and editor files
+.git/
+.gitignore
+.idea/
+.vscode/
+
+# Ignore compiled / temp files
+*.pyc
+*.pyo
+*.pyd
+*.db
+db.sqlite3
+
+# Ignore static build outputs
+staticfiles/
+static/
+media/
+
+# Ignore Docker stuff
 Dockerfile
-Makefile
-README.md
+docker-compose.yml
+docker-compose-deploy.yml
+
+# Ignore local configuration
+.env
+*.log
