@@ -5,27 +5,26 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# Create and set working directory
 WORKDIR /app
 
-# Install system deps (for psycopg2 and Pillow)
+# Install system deps (for psycopg2, Pillow, SSL, etc.)
 RUN apt-get update && apt-get install -y \
     libpq-dev gcc build-essential netcat-traditional \
+    ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Add this line to ensure certificates are trusted
+RUN update-ca-certificates
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
 
 # Copy project code
 COPY . .
 
-# Create a non-root user (for security)
 RUN useradd -m appuser
 USER appuser
 
-# Expose port 8000 (Django default)
 EXPOSE 8000
-
-# Entry point for Docker Compose (runs Django via gunicorn)
 CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
