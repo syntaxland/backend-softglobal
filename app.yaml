@@ -7,13 +7,13 @@ env_variables:
   DB_NAME: "softglobaldb"
   DB_USER: "postgres"
   DB_PASSWORD: "boz1234567"  
-  DB_HOST: "/cloudsql/backend-softglobal:us-east1:softglobaldb"
+  DB_HOST: "/cloudsql/backend-softglobal:us-central1:softglobaldb"
   DB_PORT: "5432"
   SECRET_KEY: "your-strong-secret-key"
   ALLOWED_HOSTS: "backend-softglobal.ue.r.appspot.com"
 
 beta_settings:
-  cloud_sql_instances: backend-softglobal:us-east1:softglobaldb
+  cloud_sql_instances: backend-softglobal:us-central1:softglobaldb
 
 handlers:
   - url: /static

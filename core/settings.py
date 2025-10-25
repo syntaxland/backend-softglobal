@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     # Third-party apps
     'rest_framework',
     'corsheaders', # add corsheaders app
+    'drf_yasg',  # Swagger/OpenAPI Doc
 ]
 
 # Adding JWT Auth
