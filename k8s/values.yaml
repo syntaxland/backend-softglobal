@@ -1,0 +1,7 @@
+image:
+  repository: us-central1-docker.pkg.dev/backend-softglobal/softglobal-repo/backend-softglobal
+  tag: latest
+
+service:
+  type: ClusterIP
+  port: 8000

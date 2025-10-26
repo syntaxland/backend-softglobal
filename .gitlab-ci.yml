@@ -1,0 +1,31 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  IMAGE_TAG: $CI_COMMIT_SHA
+  IMAGE_NAME: $GCP_ARTIFACT_REPO:$IMAGE_TAG
+
+before_script:
+  - echo "$GCP_SERVICE_ACCOUNT_KEY" > ${CI_PROJECT_DIR}/gcp-key.json
+  - gcloud auth activate-service-account --key-file=${CI_PROJECT_DIR}/gcp-key.json
+  - gcloud config set project $GCP_PROJECT_ID
+  - gcloud auth configure-docker $GCP_REGION-docker.pkg.dev -q
+
+build:
+  stage: build
+  image: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+  script:
+    - docker build -t $IMAGE_NAME .
+    - docker push $IMAGE_NAME
+  only:
+    - main
+
+deploy:
+  stage: deploy
+  image: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+  script:
+    - gcloud container clusters get-credentials softglobal-autopilot --region $GCP_REGION --project $GCP_PROJECT_ID
+    - kubectl set image deployment/$APP_NAME $APP_NAME=$IMAGE_NAME -n $K8S_NAMESPACE
+  only:
+    - main
