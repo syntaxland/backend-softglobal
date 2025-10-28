@@ -1,6 +1,9 @@
 version: "3.9"
 
 services:
+  # -----------------------
+  # Django app + Gunicorn
+  # -----------------------
   web:
     build: .
     command: >
@@ -17,6 +20,9 @@ services:
       - db
       - redis
 
+  # -----------------------
+  # Postgres
+  # -----------------------
   db:
     image: postgres:15
     restart: always
@@ -29,11 +35,175 @@ services:
     ports:
       - "5432:5432"
 
+  # -----------------------
+  # Redis
+  # -----------------------
   redis:
     image: redis:7
     restart: always
     ports:
       - "6379:6379"
 
+  # -----------------------
+  # Prometheus
+  # -----------------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    depends_on:
+      - cadvisor
+      - node-exporter
+      - web
+      - alertmanager
+
+  # -----------------------
+  # Grafana
+  # -----------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # -----------------------
+  # cAdvisor - container metrics
+  # -----------------------
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    restart: unless-stopped
+
+  # -----------------------
+  # Node Exporter - host metrics
+  # -----------------------
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    restart: unless-stopped
+
+  # -----------------------
+  # Alertmanager
+  # -----------------------
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/config.yml:ro
+    ports:
+      - "9093:9093"
+    restart: unless-stopped
+
+  # -----------------------
+  # ⚠️ Sentry (error tracking)
+  # -----------------------
+  sentry:
+    image: sentry:latest
+    container_name: sentry
+    environment:
+      - SENTRY_SECRET_KEY=supersecretkey
+      - SENTRY_POSTGRES_HOST=sentry-postgres
+      - SENTRY_REDIS_HOST=sentry-redis
+    ports:
+      - "9000:9000"
+    depends_on:
+      - sentry-postgres
+      - sentry-redis
+
+  sentry-postgres:
+    image: postgres:14
+    container_name: sentry-postgres
+    environment:
+      - POSTGRES_USER=sentry
+      - POSTGRES_PASSWORD=sentry
+      - POSTGRES_DB=sentry
+    volumes:
+      - sentry-postgres:/var/lib/postgresql/data
+
+  sentry-redis:
+    image: redis:6
+    container_name: sentry-redis
+    volumes:
+      - sentry-redis:/data
+
+  # -----------------------
+  # OpenTelemetry Collector (contrib)
+  # -----------------------
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  grafana-data:
+  sentry-redis:
+
+
+# version: "3.9"
+
+# services:
+#   web:
+#     build: .
+#     command: >
+#       sh -c "python manage.py migrate &&
+#              python manage.py collectstatic --noinput &&
+#              gunicorn core.wsgi:application --bind 0.0.0.0:8000"
+#     volumes:
+#       - .:/app
+#     ports:
+#       - "8000:8000"
+#     env_file:
+#       - .env
+#     depends_on:
+#       - db
+#       - redis
+
+#   db:
+#     image: postgres:15
+#     restart: always
+#     environment:
+#       POSTGRES_USER: postgres
+#       POSTGRES_PASSWORD: boz1234567
+#       POSTGRES_DB: softglobaldb
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#     ports:
+#       - "5432:5432"
+
+#   redis:
+#     image: redis:7
+#     restart: always
+#     ports:
+#       - "6379:6379"
+
+# volumes:
+#   postgres_data:
